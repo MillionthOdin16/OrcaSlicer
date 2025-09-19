@@ -40,12 +40,14 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 from orca_profile_to_ini import OrcaProfileConverter
 from orca_to_printer_file import OrcaPrinterFileGenerator
+from orca_to_slicebeam_bundle import SliceBeamBundleGenerator
 
 
 class SliceBeamExporter:
     def __init__(self, profiles_base_path: str):
         self.ini_converter = OrcaProfileConverter(profiles_base_path)
         self.orca_generator = OrcaPrinterFileGenerator(profiles_base_path)
+        self.bundle_generator = SliceBeamBundleGenerator(profiles_base_path)
     
     def export_profile(self, vendor: str, profile_name: str, output_dir: Path, 
                       formats: List[str] = None) -> bool:
@@ -61,16 +63,16 @@ class SliceBeamExporter:
         
         success = True
         
-        # Export INI format
+        # Export INI format (SliceBeam config bundle)
         if "ini" in formats:
-            ini_content = self.ini_converter.convert_profile(vendor, profile_name)
-            if ini_content:
+            bundle_content = self.bundle_generator.generate_bundle(vendor, profile_name)
+            if bundle_content:
                 ini_file = output_dir / f"{safe_name}.ini"
                 with open(ini_file, 'w', encoding='utf-8') as f:
-                    f.write(ini_content)
+                    f.write(bundle_content)
                 print(f"✓ INI: {profile_name} -> {ini_file}")
             else:
-                print(f"✗ Failed to generate INI for: {profile_name}")
+                print(f"✗ Failed to generate INI bundle for: {profile_name}")
                 success = False
         
         # Export .orca_printer format
