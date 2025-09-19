@@ -34,7 +34,7 @@ class MasterA1MiniBundleGenerator:
             "process": []
         }
         
-        # Find printer profiles (key nozzle sizes)
+        # Find printer profiles (all nozzle sizes)
         vendor_dir = self.profiles_base_path / self.vendor
         machine_dir = vendor_dir / "machine"
         
@@ -43,8 +43,8 @@ class MasterA1MiniBundleGenerator:
                 profile = self.converter.load_profile_json(json_file)
                 if profile.get("instantiation") == "true":
                     name = profile.get("name", json_file.stem)
-                    # Include key nozzle sizes
-                    if any(size in name for size in ['0.2 nozzle', '0.4 nozzle']):
+                    # Include all 4 nozzle sizes
+                    if any(size in name for size in ['0.2 nozzle', '0.4 nozzle', '0.6 nozzle', '0.8 nozzle']):
                         profiles["printer"].append(name)
         
         # Find key filament profiles
@@ -52,36 +52,43 @@ class MasterA1MiniBundleGenerator:
         if filament_dir.exists():
             key_filaments = []
             
-            # Priority filaments for A1M (avoid nozzle-specific variants)
+            # All major Bambu Lab filaments for A1M (avoid nozzle-specific variants)
             for json_file in filament_dir.glob("*A1M*.json"):
                 profile = self.converter.load_profile_json(json_file)
                 if profile.get("instantiation") == "true":
                     name = profile.get("name", json_file.stem)
-                    # Include most common materials, but avoid nozzle-specific variants
+                    # Include all major Bambu Lab materials, but avoid nozzle-specific variants
                     if any(material in name for material in [
-                        'PLA Basic', 'PLA Silk', 'PLA Matte', 
-                        'PETG Basic', 'PETG HF',
-                        'ABS @BBL A1M',
-                        'TPU 95A @BBL A1M'
+                        'PLA Basic', 'PLA Silk', 'PLA Matte', 'PLA Tough', 'PLA Metal', 'PLA Marble',
+                        'PLA Glow', 'PLA Dynamic', 'PLA Galaxy', 'PLA Sparkle', 'PLA Wood', 'PLA Aero',
+                        'PETG Basic', 'PETG HF', 'PETG Translucent', 'PETG-CF',
+                        'ABS @BBL A1M', 'ASA @BBL A1M',
+                        'TPU 95A @BBL A1M', 'TPU for AMS @BBL A1M',
+                        'Support For PLA @BBL A1M', 'Support For PLA-PETG @BBL A1M', 'Support W @BBL A1M',
+                        'PVA @BBL A1M'
                     ]) and 'nozzle' not in name:
                         key_filaments.append(name)
                         
-            # Add some key A1 filaments (compatible with A1M)
+            # Add comprehensive A1 filaments (compatible with A1M)
             for json_file in filament_dir.glob("*A1.json"):
                 if "A1M" not in json_file.name:
                     profile = self.converter.load_profile_json(json_file)
                     if profile.get("instantiation") == "true":
                         name = profile.get("name", json_file.stem)
+                        # Include all Generic materials for A1 
                         if any(material in name for material in [
-                            'Generic PLA @BBL A1',
-                            'Generic PETG @BBL A1',
-                            'Generic ABS @BBL A1'
+                            'Generic PLA @BBL A1', 'Generic PLA High Speed @BBL A1',
+                            'Generic PETG @BBL A1', 'Generic PETG HF @BBL A1',
+                            'Generic ABS @BBL A1', 'Generic ASA @BBL A1',
+                            'Generic TPU @BBL A1', 'Generic TPU for AMS @BBL A1',
+                            'Generic PC @BBL A1', 'Generic HIPS @BBL A1',
+                            'Generic PVA @BBL A1'
                         ]):
                             key_filaments.append(name)
                             
             profiles["filament"] = sorted(list(set(key_filaments)))
         
-        # Find key process profiles
+        # Find key process profiles (including nozzle-specific variants)
         process_dir = vendor_dir / "process"
         if process_dir.exists():
             key_processes = []
@@ -89,14 +96,34 @@ class MasterA1MiniBundleGenerator:
                 profile = self.converter.load_profile_json(json_file)
                 if profile.get("instantiation") == "true":
                     name = profile.get("name", json_file.stem)
-                    # Include key quality levels without nozzle-specific variants
+                    # Include key quality levels with and without nozzle variants
                     if any(quality in name for quality in [
+                        # Standard quality levels (no nozzle specific)
                         '0.08mm High Quality @BBL A1M',
+                        '0.08mm Extra Fine @BBL A1M',
                         '0.12mm Fine @BBL A1M',
+                        '0.16mm High Quality @BBL A1M',
                         '0.16mm Optimal @BBL A1M', 
                         '0.20mm Standard @BBL A1M',
-                        '0.24mm Draft @BBL A1M'
-                    ]) and 'nozzle' not in name:
+                        '0.20mm Strength @BBL A1M',
+                        '0.24mm Draft @BBL A1M',
+                        '0.28mm Extra Draft @BBL A1M',
+                        # Nozzle-specific variants for fine printing
+                        '0.06mm Fine @BBL A1M 0.2 nozzle',
+                        '0.06mm High Quality @BBL A1M 0.2 nozzle',
+                        '0.08mm High Quality @BBL A1M 0.2 nozzle',
+                        '0.10mm High Quality @BBL A1M 0.2 nozzle',
+                        '0.10mm Standard @BBL A1M 0.2 nozzle',
+                        # Nozzle-specific variants for larger nozzles
+                        '0.18mm Fine @BBL A1M 0.6 nozzle',
+                        '0.24mm Optimal @BBL A1M 0.6 nozzle',
+                        '0.30mm Standard @BBL A1M 0.6 nozzle',
+                        '0.36mm Draft @BBL A1M 0.6 nozzle',
+                        '0.24mm Fine @BBL A1M 0.8 nozzle',
+                        '0.32mm Optimal @BBL A1M 0.8 nozzle',
+                        '0.40mm Standard @BBL A1M 0.8 nozzle',
+                        '0.48mm Draft @BBL A1M 0.8 nozzle'
+                    ]):
                         key_processes.append(name)
                         
             profiles["process"] = sorted(list(set(key_processes)))
@@ -126,7 +153,7 @@ class MasterA1MiniBundleGenerator:
                 
         return None
         
-    def create_master_bundle(self) -> Optional[str]:
+    def create_master_bundle(self):
         """Create a master config bundle with all A1 mini profiles."""
         
         profiles = self.find_a1mini_profiles()
@@ -141,8 +168,10 @@ class MasterA1MiniBundleGenerator:
         if len(profiles['filament']) > 5:
             print(f"    - ... and {len(profiles['filament'])-5} more")
         print(f"  Processes: {len(profiles['process'])}")
-        for p in profiles['process']: 
+        for p in profiles['process'][:10]: 
             print(f"    - {p}")
+        if len(profiles['process']) > 10:
+            print(f"    - ... and {len(profiles['process'])-10} more")
         print()
         
         bundle_lines = []
@@ -238,13 +267,40 @@ class MasterA1MiniBundleGenerator:
         # Presets section with defaults
         bundle_lines.append("[presets]")
         if profiles["process"]:
-            bundle_lines.append(f"print = {profiles['process'][2]}")  # Use 0.16mm Optimal as default
+            # Use 0.20mm Standard as default (good balance)
+            default_process = None
+            for process in profiles["process"]:
+                if "0.20mm Standard @BBL A1M" in process and "nozzle" not in process:
+                    default_process = process
+                    break
+            if not default_process and profiles["process"]:
+                default_process = profiles["process"][len(profiles["process"])//2]  # Use middle option
+            if default_process:
+                bundle_lines.append(f"print = {default_process}")
+                
         if profiles["printer"]:
-            bundle_lines.append(f"printer = {profiles['printer'][1]}")  # Use 0.4mm as default
+            # Use 0.4mm as default (most common)
+            default_printer = None
+            for printer in profiles["printer"]:
+                if "0.4 nozzle" in printer:
+                    default_printer = printer
+                    break
+            if not default_printer:
+                default_printer = profiles["printer"][0]
+            bundle_lines.append(f"printer = {default_printer}")
+            
         if profiles["filament"]:
-            bundle_lines.append(f'filament = "{profiles["filament"][0]}"')  # Use first filament as default
+            # Use PLA Basic as default (most common)
+            default_filament = None
+            for filament in profiles["filament"]:
+                if "PLA Basic @BBL A1M" in filament:
+                    default_filament = filament
+                    break
+            if not default_filament:
+                default_filament = profiles["filament"][0]
+            bundle_lines.append(f'filament = "{default_filament}"')
         
-        return "\n".join(bundle_lines)
+        return "\n".join(bundle_lines), profiles
 
 
 def main():
@@ -283,7 +339,7 @@ def main():
     print(f"Output: {args.output}")
     print()
     
-    bundle_content = generator.create_master_bundle()
+    bundle_content, profile_counts = generator.create_master_bundle()
     if bundle_content:
         output_path = Path(args.output)
         
@@ -292,9 +348,9 @@ def main():
         print(f"✓ Successfully generated master bundle: {output_path}")
         print()
         print("This bundle contains:")
-        print("- 2 printer variants (0.2mm and 0.4mm nozzles)")  
-        print("- 8+ key filament profiles (PLA, PETG, ABS, TPU, Generic)")
-        print("- 5 print quality levels (0.08mm to 0.24mm)")
+        print(f"- {len(profile_counts['printer'])} printer variants (all A1 mini nozzle sizes)")  
+        print(f"- {len(profile_counts['filament'])} filament profiles (All Bambu Lab + Generic materials)")
+        print(f"- {len(profile_counts['process'])} print quality profiles (including nozzle-specific variants)")
         print()
         print("To use with SliceBeam:")
         print("1. Copy this single .ini file to your Android device")
